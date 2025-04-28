@@ -3,18 +3,18 @@ services:
     name: flutter-web-app
     env: node
     buildCommand: |
-      # Install Flutter
+      # Install Flutter SDK
       curl -fsSL https://storage.googleapis.com/download.flutter.io/flutter_linux_x64_stable.tar.xz -o flutter.tar.xz
       tar -xf flutter.tar.xz
       export PATH="$PWD/flutter/bin:$PATH"
       flutter doctor
 
-      # Install Flutter dependencies
+      # Install dependencies and build Flutter web
       flutter pub get
       flutter build web
 
     startCommand: |
-      # Serve Flutter web build with Nginx
+      # Serve Flutter web build with Nginx (or another static server)
       cp -r build/web/* /usr/share/nginx/html/
 
     routes:
