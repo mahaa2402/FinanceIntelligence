@@ -376,6 +376,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ];
     }
     
+    // Update selected category when switching transaction types
+    if (_transactionType == TransactionType.income && 
+        ![TransactionCategory.salary, TransactionCategory.investment, TransactionCategory.other].contains(_selectedCategory)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedCategory = TransactionCategory.salary;
+        });
+      });
+    } else if (_transactionType == TransactionType.expense && 
+              [TransactionCategory.salary, TransactionCategory.investment].contains(_selectedCategory)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedCategory = TransactionCategory.food;
+        });
+      });
+    }
+    
     return categories.map<DropdownMenuItem<TransactionCategory>>((TransactionCategory category) {
       return DropdownMenuItem<TransactionCategory>(
         value: category,

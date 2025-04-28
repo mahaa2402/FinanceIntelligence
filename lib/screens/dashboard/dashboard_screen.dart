@@ -580,19 +580,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Edit Profile',
             Icons.edit,
             () {
-              // Edit profile action
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit Profile feature coming soon!')),
-              );
+              // Show edit profile dialog
+              _showEditProfileDialog();
             },
           ),
           _buildProfileMenuItem(
             'Notification Settings',
             Icons.notifications,
             () {
-              // Notification settings action
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications feature coming soon!')),
+              // Show notification settings
+              _showSettingsDialog(
+                'Notification Settings', 
+                'You can customize how you receive notifications here.',
+                [
+                  {'title': 'Push Notifications', 'value': true},
+                  {'title': 'Transaction Alerts', 'value': true},
+                  {'title': 'Budget Alerts', 'value': false},
+                ]
               );
             },
           ),
@@ -600,10 +604,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Budget Settings',
             Icons.account_balance_wallet,
             () {
-              // Budget settings action
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Budget Settings feature coming soon!')),
-              );
+              // Show budget settings
+              _showBudgetSettingsDialog();
             },
           ),
           _buildProfileMenuItem(
@@ -611,9 +613,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Icons.security,
             () {
               // Security settings action
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Security Settings feature coming soon!')),
-              );
+              _showSecuritySettingsDialog();
             },
           ),
           _buildProfileMenuItem(
@@ -621,9 +621,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Icons.help,
             () {
               // Help action
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Help & Support feature coming soon!')),
-              );
+              _showHelpSupportDialog();
             },
           ),
           const SizedBox(height: 24),
@@ -662,6 +660,493 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         title: Text(title),
         trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+  
+  void _showEditProfileDialog() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userProfile = authProvider.userProfile;
+    
+    final TextEditingController nameController = TextEditingController(
+      text: userProfile?.displayName ?? 'User'
+    );
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                child: Icon(
+                  Icons.person,
+                  size: 40,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Photo upload coming soon!')),
+                  );
+                },
+                child: const Text('Change Photo'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Display Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                userProfile?.email ?? 'user@example.com',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                // In a real app, we would update the user profile in the database
+                if (userProfile != null) {
+                  final updatedProfile = userProfile.copyWith(
+                    displayName: nameController.text,
+                    lastUpdated: DateTime.now(),
+                  );
+                  authProvider.updateUserProfile(updatedProfile);
+                }
+              }
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profile updated successfully!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showSettingsDialog(String title, String description, List<Map<String, dynamic>> settings) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        // Create a list of settings with switches
+        List<bool> values = settings.map<bool>((s) => s['value'] as bool).toList();
+        
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(title),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      description,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 16),
+                    ...List.generate(settings.length, (index) {
+                      return SwitchListTile(
+                        title: Text(settings[index]['title'] as String),
+                        value: values[index],
+                        onChanged: (value) {
+                          setState(() {
+                            values[index] = value;
+                          });
+                        },
+                        activeColor: AppTheme.primaryColor,
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Settings saved successfully!')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+  
+  void _showBudgetSettingsDialog() {
+    final TextEditingController monthlyBudgetController = TextEditingController(text: '3000');
+    final Map<String, double> categoryBudgets = {
+      'Food': 500,
+      'Transportation': 300,
+      'Entertainment': 200,
+      'Shopping': 400,
+      'Utilities': 200,
+      'Other': 400,
+    };
+    
+    showDialog(
+      context: context, 
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Budget Settings'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Set your monthly budget to track your spending'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: monthlyBudgetController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Monthly Budget',
+                    prefixText: '\$',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Category Budgets',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...categoryBudgets.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(entry.key),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: TextEditingController(text: entry.value.toString()),
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              prefixText: '\$',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Budget settings saved!')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  void _showSecuritySettingsDialog() {
+    bool biometricEnabled = false;
+    bool twoFactorEnabled = false;
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Security & Privacy'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Manage your account security settings',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Change Password',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'New Password',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm Password',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Security Options',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Biometric Authentication'),
+                      subtitle: const Text('Use fingerprint or face ID to log in'),
+                      value: biometricEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          biometricEnabled = value;
+                        });
+                      },
+                      activeColor: AppTheme.primaryColor,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Two-Factor Authentication'),
+                      subtitle: const Text('Add an extra layer of security'),
+                      value: twoFactorEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          twoFactorEnabled = value;
+                        });
+                      },
+                      activeColor: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Privacy',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.data_usage),
+                        title: const Text('Data Usage & Privacy'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Data & Privacy settings coming soon!')),
+                          );
+                        },
+                      ),
+                    ),
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.history),
+                        title: const Text('Account Activity'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Account Activity feature coming soon!')),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Security settings saved!')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+  
+  void _showHelpSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Help & Support'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Find answers to your questions and get help',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                _buildHelpItem(
+                  'Frequently Asked Questions',
+                  Icons.help_outline,
+                  'Get answers to the most common questions',
+                  () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('FAQ section coming soon!')),
+                    );
+                  },
+                ),
+                _buildHelpItem(
+                  'Contact Us',
+                  Icons.email_outlined,
+                  'Reach out to our support team',
+                  () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Contact form coming soon!')),
+                    );
+                  },
+                ),
+                _buildHelpItem(
+                  'User Guide',
+                  Icons.book_outlined,
+                  'Learn how to use the app effectively',
+                  () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User guide coming soon!')),
+                    );
+                  },
+                ),
+                _buildHelpItem(
+                  'Privacy Policy',
+                  Icons.privacy_tip_outlined,
+                  'Read our privacy policy',
+                  () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Privacy policy coming soon!')),
+                    );
+                  },
+                ),
+                _buildHelpItem(
+                  'Terms of Service',
+                  Icons.description_outlined,
+                  'Read our terms of service',
+                  () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Terms of service coming soon!')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'App Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const ListTile(
+                  title: Text('App Version'),
+                  trailing: Text('1.0.0'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Widget _buildHelpItem(String title, IconData icon, String subtitle, VoidCallback onTap) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Icon(icon, color: AppTheme.primaryColor),
+        title: Text(title),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: onTap,
       ),
     );
