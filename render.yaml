@@ -9,12 +9,14 @@ services:
       export PATH="$PWD/flutter/bin:$PATH"
       flutter doctor
 
-      # Install dependencies and build Flutter web
+      # Install Flutter dependencies
       flutter pub get
+
+      # Build Flutter web app
       flutter build web
 
     startCommand: |
-      # Serve Flutter web build with Nginx (or another static server)
+      # Serve the Flutter web build using Nginx
       cp -r build/web/* /usr/share/nginx/html/
 
     routes:
